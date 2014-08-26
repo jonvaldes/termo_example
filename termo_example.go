@@ -84,29 +84,30 @@ func main() {
 		f.Clear()
 
 		// Draw the rectangle
-		f.PutRect(posx, posy, 20, 20, '2')
+		f.PutRect(posx, posy, 20, 20, termo.CellState{termo.AttrBold, termo.ColorYellow, termo.ColorRed}, '2')
 
 		// Draw the sine wave
 		t := float64(time.Now().UnixNano()-startT) / 500000.0
 
 		chars := []rune{'.', 'o', '*', 'o', '.'}
+		s := termo.CellState{termo.AttrNone, termo.ColorGreen, termo.ColorDefault}
 
 		for i := 0; i < w; i++ {
 			sh := 6 + int(5*math.Sin(0.001*t+float64(i)/float64(w)*math.Pi*2))
 			for j := 0; j < 5; j++ {
-				f.Put(i, sh-2+j, chars[j])
+				f.Put(i, sh-2+j, s, chars[j])
 			}
 		}
 
 		// Draw text
-		f.PutText(4, h-4, "Press Up/Down/Left/Right to move")
-		f.PutText(4, h-3, "Ctrl+C or Esc to exit")
+		f.PutText(4, h-4, termo.CellState{termo.AttrNone, termo.ColorRed, termo.ColorGray}, "Press Up/Down/Left/Right to move")
+		f.PutText(4, h-3, termo.CellState{termo.AttrBold, termo.ColorRed, termo.ColorDefault}, "Ctrl+C or Esc to exit")
 
 		// Draw outer frame
-		f.PutRect(0, 0, w, 1, '-')
-		f.PutRect(0, 0, 1, h, '|')
-		f.PutRect(w-1, 0, 1, h, '|')
-		f.PutRect(0, h-1, w, 1, '-')
+		f.PutRect(0, 0, w, 1, termo.CellState{termo.AttrNone, termo.ColorDefault, termo.ColorDefault}, '-')
+		f.PutRect(0, 0, 1, h, termo.CellState{termo.AttrNone, termo.ColorDefault, termo.ColorDefault}, '|')
+		f.PutRect(w-1, 0, 1, h, termo.CellState{termo.AttrNone, termo.ColorDefault, termo.ColorDefault}, '|')
+		f.PutRect(0, h-1, w, 1, termo.CellState{termo.AttrNone, termo.ColorDefault, termo.ColorDefault}, '-')
 
 		// Push framebuffer to screen
 		f.Flush()
