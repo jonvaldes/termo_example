@@ -84,7 +84,7 @@ func main() {
 		f.Clear()
 
 		// Draw the rectangle
-		f.Rect(posx, posy, 20, 20, '2')
+		f.PutRect(posx, posy, 20, 20, '2')
 
 		// Draw the sine wave
 		t := float64(time.Now().UnixNano()-startT) / 500000.0
@@ -94,22 +94,22 @@ func main() {
 		for i := 0; i < w; i++ {
 			sh := 6 + int(5*math.Sin(0.001*t+float64(i)/float64(w)*math.Pi*2))
 			for j := 0; j < 5; j++ {
-				f.Set(i, sh-2+j, chars[j])
+				f.Put(i, sh-2+j, chars[j])
 			}
 		}
 
 		// Draw text
-		f.SetText(4, h-4, "Press Up/Down/Left/Right to move")
-		f.SetText(4, h-3, "Ctrl+C or Esc to exit")
+		f.PutText(4, h-4, "Press Up/Down/Left/Right to move")
+		f.PutText(4, h-3, "Ctrl+C or Esc to exit")
 
 		// Draw outer frame
-		f.Rect(0, 0, w, 1, '-')
-		f.Rect(0, 0, 1, h, '|')
-		f.Rect(w-1, 0, 1, h, '|')
-		f.Rect(0, h-1, w, 1, '-')
+		f.PutRect(0, 0, w, 1, '-')
+		f.PutRect(0, 0, 1, h, '|')
+		f.PutRect(w-1, 0, 1, h, '|')
+		f.PutRect(0, h-1, w, 1, '-')
 
 		// Push framebuffer to screen
-		f.Draw()
+		f.Flush()
 
 		// Wait for next frame
 		time.Sleep(64 * time.Millisecond)
