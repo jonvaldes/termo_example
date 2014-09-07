@@ -93,14 +93,15 @@ func main() {
 			lastScanCode = s
 			if s.IsMouseMoveEvent() {
 				x, y := s.MouseCoords()
-				f.SetText(4, 4, fmt.Sprint(x, y))
 				termo.SetCursor(x, y)
 			} else if s.IsMouseDownEvent() {
 				x, y := s.MouseCoords()
 				f.SetRect(x-2, y-2, 5, 5, termo.CellState{termo.AttrBold, termo.ColorYellow, termo.ColorYellow}, '#')
+				f.Flush()
 			} else if s.IsMouseUpEvent() {
 				x, y := s.MouseCoords()
 				f.SetRect(x-2, y-2, 5, 5, termo.CellState{termo.AttrBold, termo.ColorGreen, termo.ColorGreen}, '#')
+				f.Flush()
 			} else if s.IsEscapeCode() {
 				switch s.EscapeCode() {
 				case 65: // Up
