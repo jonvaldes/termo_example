@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"time"
 
@@ -10,7 +9,6 @@ import (
 )
 
 func main() {
-
 	// Initialize termo
 	if err := termo.Init(); err != nil {
 		panic(err)
@@ -36,36 +34,66 @@ func main() {
 
 	// Start reading input from stdin
 	keyChan := make(chan termo.ScanCode, 100)
-	go func() {
-		for {
-			s, err := termo.ReadScanCode()
-			if err != nil {
-				panic(err)
-			}
-			keyChan <- s
-		}
-	}()
+	errChan := make(chan error)
 
-	posx := 10
-	posy := 10
-	startT := time.Now().UnixNano()
+	termo.StartKeyReadLoop(keyChan, errChan)
+
+	ticker := time.Tick(500 * time.Millisecond)
+
+	//var altPressed bool
+
 	var lastScanCode termo.ScanCode
-
 	// Main loop
 	for {
+		// Check for terminal resize
+		if _w, _h, _ := termo.Size(); w != _w || h != _h {
+			w = _w
+			h = _h
+			f = termo.NewFramebuffer(w, h)
+		}
+
 		// Clear framebuffer
 		f.Clear()
 
-		// Draw outer frame
-		f.ASCIIRect(0, 0, w, h, true, false)
+		f.SetText(2, 0, " File  Edit  Search  View  Options  Help")
+		f.AttribRect(0, 0, w, 1, termo.CellState{termo.AttrBold, termo.ColorBlack, termo.ColorGray})
+		f.AttribRect(0, 1, w, h, termo.CellState{termo.AttrNone, termo.ColorGray, termo.ColorBlue})
 
+		// Draw outer frame
+		f.ASCIIRect(0, 1, w, h+4, false, false)
+		filename := " C:\\CONFIG.SYS "
+		f.SetText(w/2-len(filename)/2, 1, filename)
+		f.AttribRect(w/2-len(filename)/2, 1, len(filename), 1, termo.CellState{termo.AttrBold, termo.ColorBlue, termo.ColorGray})
+
+		// Draw text
+		f.SetText(1, 2, "FILES=40\nBUFFERS=25\nDEVICE=C:\\HIMEM.SYS\nDEVICE=C:\\EMM386.EXE NOEMS\nDEVICEHIGH=C:\\NET\\ifshlp.sys")
+
+		// Draw popup
+		f.AttribRect(w/2-20, h/2-5, 40, 1, termo.BoldBlackOnWhite)
+		f.AttribRect(w/2-19, h/2-4, 40, 10, termo.BoldWhiteOnBlack)
+		f.AttribRect(w/2-20, h/2-4, 40, 9, termo.CellState{termo.AttrBold, termo.ColorBlack, termo.ColorGray})
+
+		f.CenterText(w/2, h/2-5, "About termo_example.\n")
+		f.CenterText(w/2, h/2-3, "Created by Jon Valdes\n"+
+			"as an example for the termo\n"+
+			"library, which you can get from:\n\n"+
+			"https://github.com/jonvaldes/termo")
+
+		f.AttribText(w/2-3, h/2+3, termo.BoldBlackOnWhite, "< OK >")
+		f.SetRect(w/2-2, h/2+4, 6, 1, termo.CellState{termo.AttrNone, termo.ColorBlack, termo.ColorGray}, '▀')
+		f.Set(w/2+3, h/2+3, termo.CellState{termo.AttrNone, termo.ColorBlack, termo.ColorGray}, '▄')
+
+		f.SetText(1, 8, fmt.Sprint(lastScanCode))
 		// Read keyboard
-	readAgain:
 		select {
+		case <-ticker:
+			// Periodically flush framebuffer to screen
+			f.Flush()
 		case s := <-keyChan:
 			lastScanCode = s
 			if s.IsMouseMoveEvent() {
 				x, y := s.MouseCoords()
+				f.SetText(4, 4, fmt.Sprint(x, y))
 				termo.SetCursor(x, y)
 			} else if s.IsMouseDownEvent() {
 				x, y := s.MouseCoords()
@@ -76,17 +104,9 @@ func main() {
 			} else if s.IsEscapeCode() {
 				switch s.EscapeCode() {
 				case 65: // Up
-					posy--
 				case 66: // Down
-					posy++
 				case 67: // Right
-					posx++
 				case 68: // Left
-					posx--
-				default:
-					//termo.Stop()
-					//termo.PutText(fmt.Sprint(s.EscapeCode()))
-					//return
 				}
 			} else {
 				r := s.Rune()
@@ -96,36 +116,6 @@ func main() {
 					os.Exit(0)
 				}
 			}
-			goto readAgain
-		default:
 		}
-
-		// Draw the rectangle
-		f.SetRect(posx, posy, 20, 20, termo.CellState{termo.AttrBold, termo.ColorYellow, termo.ColorRed}, '2')
-
-		// Draw the sine wave
-		t := float64(time.Now().UnixNano()-startT) / 500000.0
-
-		chars := []rune{'.', 'o', '*', 'o', '.'}
-		s := termo.CellState{termo.AttrNone, termo.ColorGreen, termo.ColorDefault}
-
-		for i := 1; i < w-1; i++ {
-			sh := 6 + int(5*math.Sin(0.001*t+float64(i)/float64(w)*math.Pi*2))
-			for j := 1; j < 5; j++ {
-				f.Set(i, sh-2+j, s, chars[j])
-			}
-		}
-
-		// Draw text
-		f.AttribRect(4, h-5, 10, 10, termo.StateDefault)
-		f.SetText(4, h-5, fmt.Sprint(lastScanCode))
-		f.SetText(4, h-4, "Press Up/Down/Left/Right to move")
-		f.SetText(4, h-3, "Ctrl+C or Esc to exit")
-
-		// Push framebuffer to screen
-		f.Flush()
-
-		// Wait for next frame
-		time.Sleep(64 * time.Millisecond)
 	}
 }
